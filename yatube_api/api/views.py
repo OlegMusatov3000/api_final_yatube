@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, mixins
 from rest_framework.permissions import (
     IsAuthenticated, IsAuthenticatedOrReadOnly
 )
@@ -8,6 +8,11 @@ from posts.models import Post, Group, Comment, Follow
 from .serializers import (
     PostSerializer, GroupSerializer, CommentSerializer, FollowSerializer)
 from .permissions import IsAuthorOrReadOnly
+
+
+class ListCreateViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
+                        viewsets.GenericViewSet):
+    pass
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -40,7 +45,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         return new_queryset
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(ListCreateViewSet):
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = (filters.SearchFilter,)
@@ -50,5 +55,5 @@ class FollowViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        new_queryset = Follow.objects.filter(user=self.request.user)
+        new_queryset = self.request.user.follower.all()
         return new_queryset
